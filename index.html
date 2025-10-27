@@ -6,6 +6,7 @@
 <title>WorksTime - Hours Tracker (Blue)</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 :root{
   --accent:#4da6ff;
@@ -660,62 +661,64 @@ function copyResults(){
 function saveAsPDF(){
   if(!currentResults.leaveTime) calculateResults();
   
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  // Create a temporary div for rendering
+  const tempDiv = document.createElement('div');
+  tempDiv.style.cssText = 'position:absolute;left:-9999px;width:600px;padding:30px;background:#0f1620;color:#e3f0ff;font-family:Arial,sans-serif;direction:'+(currentLanguage==='ar'?'rtl':'ltr');
+  
   // Get checkbox states
   const showShift=document.getElementById('showShift').checked;
   const showRemaining=document.getElementById('showRemaining').checked;
   const showLeave=document.getElementById('showLeave').checked;
   const showUsed=document.getElementById('showUsed').checked;
   
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+  let html = '';
   
-  // Set background color
-  doc.setFillColor(15, 22, 32);
-  doc.rect(0, 0, 210, 297, 'F');
-  
-  // Employee name if exists
-  let yPos = 30;
+  // Employee name
   if(currentResults.name){
-    doc.setFontSize(16);
-    doc.setTextColor(77, 166, 255);
-    doc.text(currentResults.name, 105, yPos, { align: 'center' });
-    yPos += 20;
+    html += `<div style="text-align:center;font-size:20px;color:#4da6ff;margin-bottom:20px;font-weight:bold;">${currentResults.name}</div>`;
   }
   
   // Results
-  doc.setFontSize(12);
-  doc.setTextColor(227, 240, 255);
   const labels=currentLanguage==='ar'?{
     shift:'الوردية',used:'المستخدمة',remaining:'المتبقية',leave:'الخروج'
   }:{
     shift:'Shift',used:'Used',remaining:'Remaining',leave:'Leave'
   };
   
-  if(showShift){
-    doc.text(`${labels.shift}: ${currentResults.shift}`, 20, yPos);
-    yPos += 10;
-  }
-  if(showUsed){
-    doc.text(`${labels.used}: ${currentResults.usedHours}`, 20, yPos);
-    yPos += 10;
-  }
-  if(showRemaining){
-    doc.text(`${labels.remaining}: ${currentResults.remainingHours}`, 20, yPos);
-    yPos += 10;
-  }
-  if(showLeave){
-    doc.text(`${labels.leave}: ${currentResults.leaveTime}`, 20, yPos);
-    yPos += 10;
-  }
+  html += '<div style="font-size:16px;line-height:2;">';
+  if(showShift) html += `<div>${labels.shift}: ${currentResults.shift}</div>`;
+  if(showUsed) html += `<div>${labels.used}: ${currentResults.usedHours}</div>`;
+  if(showRemaining) html += `<div>${labels.remaining}: ${currentResults.remainingHours}</div>`;
+  if(showLeave) html += `<div>${labels.leave}: ${currentResults.leaveTime}</div>`;
+  html += '</div>';
   
   // Footer
-  doc.setFontSize(10);
-  doc.setTextColor(77, 166, 255);
   const genLabel=currentLanguage==='ar'?'تم الإنشاء':'Generated';
-  doc.text(`${genLabel}: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, 280, { align: 'center' });
+  html += `<div style="text-align:center;font-size:12px;color:#4da6ff;margin-top:30px;">${genLabel}: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>`;
   
-  doc.save('workstime-'+currentShift+'-'+new Date().toISOString().slice(0,10)+'.pdf');
-  showNotification(currentLanguage==='ar'?'تم حفظ PDF':'PDF saved');
+  tempDiv.innerHTML = html;
+  document.body.appendChild(tempDiv);
+  
+  html2canvas(tempDiv, {
+    backgroundColor: '#0f1620',
+    scale: 2
+  }).then(canvas => {
+    document.body.removeChild(tempDiv);
+    
+    const imgData = canvas.toDataURL('image/png');
+    const imgWidth = 190;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    
+    doc.setFillColor(15, 22, 32);
+    doc.rect(0, 0, 210, 297, 'F');
+    doc.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+    
+    doc.save('workstime-'+currentShift+'-'+new Date().toISOString().slice(0,10)+'.pdf');
+    showNotification(currentLanguage==='ar'?'تم حفظ PDF':'PDF saved');
+  });
 }
 
 function saveAsImage(){
@@ -929,71 +932,60 @@ function saveBatchAsPDF(){
   if(batchData.length===0){calculateBatch();if(batchData.length===0)return;}
   
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+  const doc = new jsPDF('l', 'mm', 'a4'); // Landscape for table
   
-  // Set background
-  doc.setFillColor(15, 22, 32);
-  doc.rect(0, 0, 210, 297, 'F');
+  // Create temporary div for rendering
+  const tempDiv = document.createElement('div');
+  tempDiv.style.cssText = 'position:absolute;left:-9999px;width:1000px;padding:20px;background:#0f1620;color:#e3f0ff;font-family:Arial,sans-serif;direction:'+(currentLanguage==='ar'?'rtl':'ltr');
   
-  // Title
-  doc.setFontSize(18);
-  doc.setTextColor(77, 166, 255);
   const title = currentLanguage==='ar'?'تقرير دفعة الساعات':'Batch Hours Report';
-  doc.text(title, 105, 20, { align: 'center' });
-  
-  // Table headers
   const labels=currentLanguage==='ar' ? ['#','الاسم','الوردية','المستخدمة','المتبقي','الخروج']
                                       : ['#','Name','Shift','Used','Remaining','Leave'];
   
-  let yPos = 35;
-  doc.setFontSize(10);
-  doc.setTextColor(77, 166, 255);
+  let html = `<div style="text-align:center;font-size:24px;color:#4da6ff;margin-bottom:20px;font-weight:bold;">${title}</div>`;
+  html += '<table style="width:100%;border-collapse:collapse;font-size:14px;">';
+  html += '<thead><tr>';
+  labels.forEach(label => {
+    html += `<th style="border:1px solid #4da6ff;padding:8px;background:#1a2a4d;color:#4da6ff;">${label}</th>`;
+  });
+  html += '</tr></thead><tbody>';
   
-  // Header row
-  const colX = [15, 30, 70, 110, 140, 170];
-  labels.forEach((label, i) => {
-    doc.text(label, colX[i], yPos);
+  batchData.forEach(d => {
+    html += '<tr>';
+    html += `<td style="border:1px solid #4da6ff;padding:8px;text-align:center;">${d.index}</td>`;
+    html += `<td style="border:1px solid #4da6ff;padding:8px;">${d.name||'-'}</td>`;
+    html += `<td style="border:1px solid #4da6ff;padding:8px;">${d.shiftName}</td>`;
+    html += `<td style="border:1px solid #4da6ff;padding:8px;text-align:center;">${d.used}</td>`;
+    html += `<td style="border:1px solid #4da6ff;padding:8px;text-align:center;">${d.remaining}</td>`;
+    html += `<td style="border:1px solid #4da6ff;padding:8px;text-align:center;">${d.leave}</td>`;
+    html += '</tr>';
   });
   
-  // Draw header line
-  doc.setDrawColor(77, 166, 255);
-  doc.line(10, yPos + 2, 200, yPos + 2);
+  html += '</tbody></table>';
   
-  // Data rows
-  yPos += 10;
-  doc.setFontSize(9);
-  doc.setTextColor(227, 240, 255);
+  const genLabel=currentLanguage==='ar'?'تم الإنشاء':'Generated';
+  html += `<div style="text-align:center;font-size:11px;color:#4da6ff;margin-top:20px;">${genLabel}: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>`;
   
-  batchData.forEach((d, idx) => {
-    if(yPos > 270){
-      doc.addPage();
-      doc.setFillColor(15, 22, 32);
-      doc.rect(0, 0, 210, 297, 'F');
-      yPos = 20;
-    }
+  tempDiv.innerHTML = html;
+  document.body.appendChild(tempDiv);
+  
+  html2canvas(tempDiv, {
+    backgroundColor: '#0f1620',
+    scale: 2
+  }).then(canvas => {
+    document.body.removeChild(tempDiv);
     
-    doc.text(String(d.index), colX[0], yPos);
-    doc.text(d.name||'-', colX[1], yPos);
-    doc.text(d.shiftName, colX[2], yPos);
-    doc.text(d.used, colX[3], yPos);
-    doc.text(d.remaining, colX[4], yPos);
-    doc.text(d.leave, colX[5], yPos);
+    const imgData = canvas.toDataURL('image/png');
+    const imgWidth = 277; // A4 landscape width minus margins
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
     
-    yPos += 8;
+    doc.setFillColor(15, 22, 32);
+    doc.rect(0, 0, 297, 210, 'F');
+    doc.addImage(imgData, 'PNG', 10, 10, imgWidth, Math.min(imgHeight, 190));
+    
+    doc.save('workstime-batch-'+new Date().toISOString().slice(0,10)+'.pdf');
+    showNotification(currentLanguage==='ar'?'تم حفظ PDF':'PDF saved');
   });
-  
-  // Footer
-  const pages = doc.internal.pages.length - 1;
-  for(let i=1; i<=pages; i++){
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(77, 166, 255);
-    const genLabel=currentLanguage==='ar'?'تم الإنشاء':'Generated';
-    doc.text(`${genLabel}: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, 290, { align: 'center' });
-  }
-  
-  doc.save('workstime-batch-'+new Date().toISOString().slice(0,10)+'.pdf');
-  showNotification(currentLanguage==='ar'?'تم حفظ PDF':'PDF saved');
 }
 
 function saveBatchAsImage(){
