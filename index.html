@@ -393,7 +393,7 @@ body.ltr .batch-table select,body.ltr .batch-table input{direction:ltr}
           </div>
           <div class="filter-option">
             <input type="checkbox" id="showLeave" checked onchange="toggleResultDisplay()">
-            <label for="showLeave" data-en="Leave Time" data-ar="وقت المغادرة">وقت المغادرة</label>
+            <label for="showLeave" data-en="Leave Time" data-ar="وقت الخروج">وقت الخروج</label>
           </div>
           <div class="filter-option">
             <input type="checkbox" id="showUsed" checked onchange="toggleResultDisplay()">
@@ -412,7 +412,7 @@ body.ltr .batch-table select,body.ltr .batch-table input{direction:ltr}
           <span class="result-value remaining-hours" id="remainingHours">-</span>
         </div>
         <div class="result-item" id="resultLeave">
-          <span class="result-label" data-en="🚪 Can Leave At:" data-ar="🚪 يمكن المغادرة في:">🚪 يمكن المغادرة في:</span>
+          <span class="result-label" data-en="🚪 Can Leave At:" data-ar="🚪 وقت الخروج:">🚪 وقت الخروج:</span>
           <span class="result-value leave-time" id="leaveTime">-</span>
         </div>
         <div class="result-item" id="resultUsed">
@@ -465,7 +465,7 @@ body.ltr .batch-table select,body.ltr .batch-table input{direction:ltr}
                 <th data-en="Shift" data-ar="الوردية">الوردية</th>
                 <th data-en="Used" data-ar="المستخدمة">المستخدمة</th>
                 <th data-en="Remaining" data-ar="المتبقي">المتبقي</th>
-                <th data-en="Leave At" data-ar="المغادرة">المغادرة</th>
+                <th data-en="Leave At" data-ar="الخروج">الخروج</th>
               </tr>
             </thead>
             <tbody id="batchResultsBody"></tbody>
@@ -639,7 +639,7 @@ function copyResults(){
   const showUsed=document.getElementById('showUsed').checked;
   
   const labels=currentLanguage==='ar'?{
-    shift:'الوردية',used:'الساعات المستخدمة',remaining:'الساعات المتبقية',leave:'يمكن المغادرة في',generated:'تم الإنشاء'
+    shift:'الوردية',used:'الساعات المستخدمة',remaining:'الساعات المتبقية',leave:'وقت الخروج',generated:'تم الإنشاء'
   }:{
     shift:'Shift',used:'Used Hours',remaining:'Remaining Hours',leave:'Can Leave At',generated:'Generated'
   };
@@ -686,7 +686,7 @@ function saveAsPDF(){
   doc.setFontSize(12);
   doc.setTextColor(227, 240, 255);
   const labels=currentLanguage==='ar'?{
-    shift:'الوردية',used:'المستخدمة',remaining:'المتبقية',leave:'المغادرة'
+    shift:'الوردية',used:'المستخدمة',remaining:'المتبقية',leave:'الخروج'
   }:{
     shift:'Shift',used:'Used',remaining:'Remaining',leave:'Leave'
   };
@@ -756,7 +756,7 @@ function saveAsImage(){
     if(showShift) lines.push('الوردية: '+currentResults.shift);
     if(showUsed) lines.push('المستخدمة: '+currentResults.usedHours);
     if(showRemaining) lines.push('المتبقية: '+currentResults.remainingHours);
-    if(showLeave) lines.push('المغادرة: '+currentResults.leaveTime);
+    if(showLeave) lines.push('الخروج: '+currentResults.leaveTime);
   }else{
     if(showShift) lines.push('Shift: '+currentResults.shift);
     if(showUsed) lines.push('Used: '+currentResults.usedHours);
@@ -913,7 +913,7 @@ function renderBatchResults(){
 function copyBatchSummary(){
   if(batchData.length===0){calculateBatch();if(batchData.length===0)return;}
   const labels=currentLanguage==='ar'?{
-    batch:'ملخص الدفعة',name:'الاسم',shift:'الوردية',used:'المستخدمة',remain:'المتبقي',leave:'المغادرة'
+    batch:'ملخص الدفعة',name:'الاسم',shift:'الوردية',used:'المستخدمة',remain:'المتبقي',leave:'الخروج'
   }:{
     batch:'Batch Summary',name:'Name',shift:'Shift',used:'Used',remain:'Remaining',leave:'Leave'
   };
@@ -942,7 +942,7 @@ function saveBatchAsPDF(){
   doc.text(title, 105, 20, { align: 'center' });
   
   // Table headers
-  const labels=currentLanguage==='ar' ? ['#','الاسم','الوردية','المستخدمة','المتبقي','المغادرة']
+  const labels=currentLanguage==='ar' ? ['#','الاسم','الوردية','المستخدمة','المتبقي','الخروج']
                                       : ['#','Name','Shift','Used','Remaining','Leave'];
   
   let yPos = 35;
@@ -1025,7 +1025,7 @@ function saveBatchAsImage(){
   ctx.fillText(title,450,50);
   ctx.shadowBlur=0;
 
-  const labels=currentLanguage==='ar' ? ['#','الاسم','الوردية','المستخدمة','المتبقي','المغادرة']
+  const labels=currentLanguage==='ar' ? ['#','الاسم','الوردية','المستخدمة','المتبقي','الخروج']
                                       : ['#','Name','Shift','Used','Remaining','Leave'];
   const colWidths=[50,180,170,140,140,160];
   const colStarts=[];
